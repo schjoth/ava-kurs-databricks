@@ -24,7 +24,7 @@ convert_price_udf = udf(lambda z: convert_price_to_clean(z), StringType())
 # COMMAND ----------
 
 # Read the data from CSV-file
-filePath = "/FileStore/tables/listings_csv.gz"
+filePath = "/FileStore/tables/listings.csv"
 rawDF = (spark
          .read
          .option("header", "true")
@@ -128,7 +128,8 @@ display(baseDF.select("price"))
 # TODO: Replace <FILL_IN> with appropriate code
 
 fixedPriceDF = (baseDF
-                .<FILL_IN>
+                .withColumnRenamed("price", "price_raw")
+                .withColumn("price", convert_price_udf("price_raw"))
                )
 
 # COMMAND ----------
@@ -159,7 +160,7 @@ print("Tests passed.")
 # COMMAND ----------
 
 # TODO: Get rid of price_raw column
-fixedPriceDF = fixedPriceDF.<FILL_IN>
+fixedPriceDF = fixedPriceDF.drop("price_raw")
 
 # COMMAND ----------
 
@@ -174,7 +175,9 @@ fixedPriceDF = fixedPriceDF.<FILL_IN>
 # TODO: Replace <FILL_IN> with appropriate code
 
 changedBooleanDF = (fixedPriceDF
-                    .<FILL_IN>
+                    .withColumn("host_is_superhost", when(fixedPriceDF.host_is_superhost == "t", True)
+                                 .otherwise(False))
+                    .withColumn("instant_bookable", when(fixedPriceDF.instant_bookable == "t", True).otherwise(False))
                    )
 
 # COMMAND ----------
@@ -270,7 +273,7 @@ print("Tests passed.")
 # COMMAND ----------
 
 # TODO: Replace <FILL_IN> with appropriate code
-display(imputedDF.<FILL_IN>)
+display(imputedDF.describe())
 
 # COMMAND ----------
 
@@ -282,7 +285,7 @@ display(imputedDF.<FILL_IN>)
 
 # TODO: Replace <FILL_IN> with appropriate code
 
-imputedDF.<FILL_IN>
+imputedDF.filter(imputedDF.price == 0).count()
 
 # COMMAND ----------
 
@@ -303,7 +306,9 @@ display(imputedDF.select("price").where("price < 2500"))
 
 # TODO: Replace <FILL_IN> with appropriate code
 
-posPricesDF = <FILL_IN>
+#posPricesDF = imputedDF.filter(imputedDF.price <= 2100 and imputedDF.price > 0)
+#posPricesDF = imputedDF.where(0 < imputedDF.price <= 2100).count()
+posPricesDF = imputedDF.where("price > 0 and price <= 2100")
 
 # COMMAND ----------
 
@@ -350,7 +355,7 @@ display(posPricesDF.groupBy("minimum_nights").count().orderBy(col("minimum_night
 # COMMAND ----------
 
 # TODO: Replace <FILL_IN> with appropriate code
-cleanDF = posPricesDF.<FILL_IN>
+cleanDF = posPricesDF.where("minimum_nights <= 30")
 
 # COMMAND ----------
 
